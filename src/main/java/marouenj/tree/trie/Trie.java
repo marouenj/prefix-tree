@@ -14,12 +14,39 @@ public class Trie<A> {
 	public Trie() {
 		this.root = new Node<A>(null);
 	}
-
+	
 	/**
-	 * Map the key to a value if the key exists. Map to null otherwise.
+	 * Checks the existence of a key.
+	 * Returns true whether the node is intermediary (non-valued) or valued.
 	 * 
 	 * @param key
-	 * @return Value mapped by key. Null if the key does not exist.
+	 * @return True if the key exists.
+	 */
+	public boolean exist(String key) {
+		if (key == null || key == "") {
+			return false;
+		}
+		
+		Node<A> curr = root;
+		
+		for (int i = 0; i < key.length(); i++) {
+			char c = key.charAt(i);
+			
+			if (curr == null || !curr.children.containsKey(c)) {
+				return false;
+			}
+			
+			curr = curr.children.get(c);
+		}
+		
+		return true;
+	}
+
+	/**
+	 * Maps the key to a value if the key exists.
+	 * 
+	 * @param key
+	 * @return The value mapped by key. Null if the key does not exist.
 	 */
 	public A get(String key) {
 		if (key == null || key == "") {
@@ -32,9 +59,9 @@ public class Trie<A> {
 			char c = key.charAt(i);
 			if (curr == null || !curr.children.containsKey(c)) {
 				return null;
-			} else {
-				curr = curr.children.get(c);
 			}
+			
+			curr = curr.children.get(c);
 		}
 		
 		return curr.val;
@@ -72,12 +99,12 @@ public class Trie<A> {
 	}
 	
 	/**
-	 * Insert the remainder of a key while avoiding repetitive tests about the existence of the key.
+	 * Inserts the remainder of a key while avoiding repetitive tests about the existence of the key.
 	 * This method should be called internally by 'set' as soon as it encounters a non existing prefix.
 	 * 
-	 * @param n Node to append.
-	 * @param suf Remainder of the original key.
-	 * @return Inserted node.
+	 * @param n The node to append.
+	 * @param suf The remainder of the original key.
+	 * @return The inserted node.
 	 */
 	private static<A> Node<A> setSuffix(Node<A> n, String suf) {
 		for (int i = 0; i < suf.length(); i++) {
@@ -88,5 +115,65 @@ public class Trie<A> {
 		}
 		
 		return n;
+	}
+	
+	/**
+	 * Upon deleting a key, subsequent calls to 'get' for this 'key' will return null (key non existing).
+	 * The node holding the key as well as others node may be deleted in the process if they don't make sense to still be in the tree.
+	 * 
+	 * @param key
+	 * @return True if deletion occurred.
+	 */
+	public boolean del(String key) {
+		if (key == null || key == "") { // invalid key
+			return false;
+		}
+		
+		Node<A> curr = root;
+		
+		Character nodeToDetach = null; // track the first non-'valued' node
+		Node<A> detachFrom = null; // get the parent
+
+		// exclude the last char
+		for (int i = 0; i < key.length()-1; i++) {
+			char c = key.charAt(i);
+			if (curr == null || !curr.children.containsKey(c)) { // key not exist
+				return false;
+			}
+			
+			Node<A> prev = curr;
+			curr = curr.children.get(c);
+			
+			if (curr.children.size() > 1 || curr.val != null) { // this node is not candidate for deletion
+				detachFrom = null;
+			} else if (detachFrom == null) {
+				detachFrom = prev;
+				nodeToDetach = curr.key;
+			}
+		}
+		
+		// the last char
+		char c = key.charAt(key.length()-1);
+		if (curr == null || !curr.children.containsKey(c)) { // key not exist
+			return false;
+		}
+		
+		Node<A> prev = curr;
+		curr = curr.children.get(c);
+		
+		if (curr.children.size() > 0) { // this node is not candidate for deletion
+			detachFrom = null;
+		} else if (detachFrom == null) {
+			detachFrom = prev;
+			nodeToDetach = curr.key;
+		}
+		
+		if (detachFrom != null) {
+			detachFrom.children.remove(nodeToDetach);
+		} else {
+			curr.val = null;
+		}
+		
+		return true;
 	}
 }
