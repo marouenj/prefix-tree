@@ -1,3 +1,3 @@
 # prefix-tree
 
-Java implementation of a prefix-tree (trie).
+Java implementation of Prefix trees (trie).
